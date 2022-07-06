@@ -9,11 +9,10 @@ from latch import small_task, workflow
 from latch.types import LatchFile, LatchDir
 
 
-
-#make the index file 
+# make the index file
 @small_task
 def index_task(bam: LatchFile) -> (LatchFile):
-    #reference to the output
+    # reference to the output
     bam_index_file = Path("index_of_bam.bam").resolve()
 
     _samtools_index_cmd = [
@@ -27,11 +26,9 @@ def index_task(bam: LatchFile) -> (LatchFile):
     return LatchFile(str(bam_index_file), "latch:///index_of_bam.bam")
 
 
-
-#makes tag directory
+# makes tag directory
 @small_task
 def make_tagDirectory_task(bam: LatchFile) -> (LatchDir):
-
     # A reference to our output.
     tag_directory = Path("peak-tagdir").resolve()
 
@@ -46,11 +43,9 @@ def make_tagDirectory_task(bam: LatchFile) -> (LatchDir):
     return LatchDir(str(tag_directory), "latch:///peak-tagdir")
 
 
-
-#creates the text file for the peaks
+# creates the text file for the peaks
 @small_task
 def peak_textfile_task(tagdir: LatchDir) -> LatchFile:
-    
     peaktext_file = Path("peaks.txt").resolve()
 
     _HOMER_findPeaks_cmd = [
@@ -66,17 +61,16 @@ def peak_textfile_task(tagdir: LatchDir) -> LatchFile:
         "2",
         "-o",
         str(peaktext_file)
-
-        ]
+    ]
 
     subprocess.run(_HOMER_findPeaks_cmd)
 
-    return LatchFile(str(peaktext_file), "latch:///peaks.txt" )
-    
-#makes the homer bed file
+    return LatchFile(str(peaktext_file), "latch:///peaks.txt")
+
+
+# makes the homer bed file
 @small_task
 def peak_bedfile_task(peaktextfile: LatchFile) -> LatchFile:
-
     peak_bed_file = Path("peaks.bed").resolve()
 
     _HOMER_makebed_cmd = [
@@ -91,10 +85,9 @@ def peak_bedfile_task(peaktextfile: LatchFile) -> LatchFile:
     return LatchFile(str(peak_bed_file), "latch:///peaks.bed")
 
 
-#finding motifs
+# finding motifs
 @small_task
 def find_motif_task(peaksbed: LatchFile) -> LatchDir:
-
     motifs_directory = Path("motif_output_directory").resolve()
 
     _HOMER_motifs_cmd = [
@@ -104,7 +97,7 @@ def find_motif_task(peaksbed: LatchFile) -> LatchDir:
         str(motifs_directory),
         "-size",
         "200"
-        ]
+    ]
 
     subprocess.run(_HOMER_motifs_cmd)
 
@@ -113,7 +106,6 @@ def find_motif_task(peaksbed: LatchFile) -> LatchDir:
 
 @small_task
 def sort_bam_task(sam: LatchFile) -> LatchFile:
-
     bam_file = Path("covid_sorted.bam").resolve()
 
     _samtools_sort_cmd = [
@@ -138,26 +130,24 @@ def call_motifs(bam: LatchFile) -> LatchDir:
     Homer-Motif
     ----
 
-    Homer-Motif calls peaks using homer motif callers and analyzes the genomic positions
-    for enriched motifs. 
+    Homer-Motif calls peaks using homer motif callers and analyzes the genomic positions for enriched motifs.
 
     __metadata__:
         display_name: HOMER motif caller
-        author: annalijh
-            name:
-            email:
-            github:
-        repository:
+        author:
+            name: annalijh
+            email: anna.li3@mail.mcgill.ca
         license:
-            id: 
+            id: MIT
 
     Args:
 
         bam:
-          input bam file to find enriched motifs
+          Input bam file to find enriched motifs
 
           __metadata__:
-            display_name: bam
+            display_name: Input bam file
+
 
         
     """
@@ -165,11 +155,8 @@ def call_motifs(bam: LatchFile) -> LatchDir:
     tagdir = make_tagDirectory_task(bam=bam)
     peaktextfile = peak_textfile_task(tagdir=tagdir)
     peaksbed = peak_bedfile_task(peaktextfile=peaktextfile)
-    return find_motif_task(peaksbed = peaksbed)
+    return find_motif_task(peaksbed=peaksbed)
 
 
 if __name__ == "__main__":
-    call_motifs(bam = LatchFile("/Users/annali/Downloads/annaliworkflow/wf/ENCFF835YDD.bam"))
-
-
-
+    call_motifs(bam=LatchFile("/Users/annali/Downloads/annaliworkflow/data/ENCFF835YDD.bam"))
