@@ -11,7 +11,7 @@ from latch.types import LatchFile, LatchDir
 
 # make the index file
 @small_task
-def index_task(bam: LatchFile) -> (LatchFile):
+def index_task(bam: LatchFile) -> LatchFile:
     # reference to the output
     bam_index_file = Path("index_of_bam.bam").resolve()
 
@@ -137,6 +137,8 @@ def call_motifs(bam: LatchFile) -> LatchDir:
         author:
             name: annalijh
             email: anna.li3@mail.mcgill.ca
+            github: https://github.com/TheMatrixMaster
+        repository: https://github.com/TheMatrixMaster/homer-motif-latch-wf
         license:
             id: MIT
 
@@ -159,4 +161,6 @@ def call_motifs(bam: LatchFile) -> LatchDir:
 
 
 if __name__ == "__main__":
-    call_motifs(bam=LatchFile("/Users/annali/Downloads/annaliworkflow/data/ENCFF835YDD.bam"))
+    # call_motifs(bam=LatchFile("reference/test_file.bam"))
+    call_motifs(bam=LatchFile("/Users/stephenlu/Documents/latchbio/homer-motif-latch/data/test_file.bam"))
+

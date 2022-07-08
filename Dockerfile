@@ -7,12 +7,11 @@ RUN apt-get update -y
 RUN apt-get install -y gcc g++ make perl zip unzip gzip wget
 
 # Add dependencies
-RUN apt-get update && apt-get install -y libnss-sss samtools r-base r-base-dev tabix wget libssl-dev libcurl4-openssl-dev libxml2-dev && apt-get clean all
+RUN apt-get install -y libnss-sss samtools r-base r-base-dev tabix wget libssl-dev libcurl4-openssl-dev libxml2-dev && apt-get clean all
 
 ## Now install R and littler, and create a link for littler in /usr/local/bin
 ## Also set a default CRAN repo, and make sure littler knows about it too
-RUN apt-get update \
-    && apt-get install -y \
+RUN apt-get install -y \
         r-base \
         r-base-dev \
         r-recommended \
@@ -26,8 +25,10 @@ RUN Rscript -e 'install.packages(c("devtools", "dplyr", "ggplot2", "reshape2"))'
 
 
 # Install HOMER
-# Code from https://github.com/chrisamiller/docker-homer/blob/master/DockerfileRUN
-RUN mkdir /opt/homer/ && cd /opt/homer && wget http://homer.ucsd.edu/homer/configureHomer.pl && /usr/bin/perl configureHomer.pl -install 
+# Code from https://github.com/chrisamiller/docker-homer/blob/master/Dockerfile
+RUN mkdir /opt/homer/ && cd /opt/homer && wget http://homer.ucsd.edu/homer/configureHomer.pl \
+    && /usr/bin/perl configureHomer.pl -install \
+    && /usr/bin/perl configureHomer.pl -install hg19
 
 #softlink config file and data directory
 RUN rm -rf /opt/homer/data && ln -s /opt/homerdata/data /opt/homer/data
@@ -36,11 +37,11 @@ RUN rm -f /opt/homer/config.txt && ln -s /opt/homerdata/config.txt /opt/homer/co
 ENV PATH=${PATH}:/opt/homer/bin/
 
 COPY data /root/reference
+COPY wf /root/wf
 
 # STOP HERE:
 # The following lines are needed to ensure your build environement works
 # correctly with latch.
-COPY wf /root/wf
 ARG tag
 ENV FLYTE_INTERNAL_IMAGE $tag
 RUN python3 -m pip install --upgrade latch
