@@ -5,52 +5,29 @@ Find Motifs ...
 import subprocess
 from pathlib import Path
 
-from latch import small_task, workflow
+from latch import small_task, large_task, workflow
 from latch.types import LatchFile, LatchDir
 
 
-# make the index file
-@small_task
-def index_task(bam: LatchFile) -> LatchFile:
-    # reference to the output
-    bam_index_file = Path("index_of_bam.bam").resolve()
+@large_task
+def find_motif_task(bam: LatchFile) -> LatchDir:
+    # Step 1
+    tag_directory = Path("peak_tag_dir").resolve()
 
-    _samtools_index_cmd = [
-        "samtools",
-        "index",
-        bam.local_path,
-    ]
-
-    subprocess.run(_samtools_index_cmd)
-
-    return LatchFile(str(bam_index_file), "latch:///index_of_bam.bam")
-
-
-# makes tag directory
-@small_task
-def make_tagDirectory_task(bam: LatchFile) -> (LatchDir):
-    # A reference to our output.
-    tag_directory = Path("peak-tagdir").resolve()
-
-    _HOMER_tagdir_cmd = [
+    _HOMER_tag_dir_cmd = [
         "makeTagDirectory",
         str(tag_directory),
         bam.local_path
     ]
 
-    subprocess.run(_HOMER_tagdir_cmd)
+    subprocess.run(_HOMER_tag_dir_cmd)
 
-    return LatchDir(str(tag_directory), "latch:///peak-tagdir")
-
-
-# creates the text file for the peaks
-@small_task
-def peak_textfile_task(tagdir: LatchDir) -> LatchFile:
-    peaktext_file = Path("peaks.txt").resolve()
+    # Step 2
+    peak_text_file = Path("peaks.txt").resolve()
 
     _HOMER_findPeaks_cmd = [
         "findPeaks",
-        tagdir.local_path,
+        str(tag_directory),
         "-style",
         "histone",
         "-nfr",
@@ -60,39 +37,29 @@ def peak_textfile_task(tagdir: LatchDir) -> LatchFile:
         "-L",
         "2",
         "-o",
-        str(peaktext_file)
+        str(peak_text_file)
     ]
 
     subprocess.run(_HOMER_findPeaks_cmd)
 
-    return LatchFile(str(peaktext_file), "latch:///peaks.txt")
+    # Task 3
+    peaks_bed_file = Path("peaks.bed").resolve()
 
-
-# makes the homer bed file
-@small_task
-def peak_bedfile_task(peaktextfile: LatchFile) -> LatchFile:
-    peak_bed_file = Path("peaks.bed").resolve()
-
-    _HOMER_makebed_cmd = [
+    _HOMER_make_bed_cmd = [
         "pos2bed.pl",
-        peaktextfile.local_path,
-        ">",
-        str(peak_bed_file)
+        str(peak_text_file),
+        "-o",
+        str(peaks_bed_file)
     ]
 
-    subprocess.run(_HOMER_makebed_cmd)
+    subprocess.run(_HOMER_make_bed_cmd)
 
-    return LatchFile(str(peak_bed_file), "latch:///peaks.bed")
-
-
-# finding motifs
-@small_task
-def find_motif_task(peaksbed: LatchFile) -> LatchDir:
+    # Task 4
     motifs_directory = Path("motif_output_directory").resolve()
 
     _HOMER_motifs_cmd = [
         "findMotifsGenome.pl",
-        peaksbed.local_path,
+        str(peaks_bed_file),
         "hg38",
         str(motifs_directory),
         "-size",
@@ -102,25 +69,6 @@ def find_motif_task(peaksbed: LatchFile) -> LatchDir:
     subprocess.run(_HOMER_motifs_cmd)
 
     return LatchDir(str(motifs_directory), "latch:///motif_output_directory")
-
-
-@small_task
-def sort_bam_task(sam: LatchFile) -> LatchFile:
-    bam_file = Path("covid_sorted.bam").resolve()
-
-    _samtools_sort_cmd = [
-        "samtools",
-        "sort",
-        "-o",
-        str(bam_file),
-        "-O",
-        "bam",
-        sam.local_path,
-    ]
-
-    subprocess.run(_samtools_sort_cmd)
-
-    return LatchFile(str(bam_file), "latch:///covid_sorted.bam")
 
 
 @workflow
@@ -153,14 +101,6 @@ def call_motifs(bam: LatchFile) -> LatchDir:
 
         
     """
-    index_file = index_task(bam=bam)
-    tagdir = make_tagDirectory_task(bam=bam)
-    peaktextfile = peak_textfile_task(tagdir=tagdir)
-    peaksbed = peak_bedfile_task(peaktextfile=peaktextfile)
-    return find_motif_task(peaksbed=peaksbed)
 
-
-if __name__ == "__main__":
-    # call_motifs(bam=LatchFile("reference/test_file.bam"))
-    call_motifs(bam=LatchFile("/Users/stephenlu/Documents/latchbio/homer-motif-latch/data/test_file.bam"))
+    return find_motif_task(bam=bam)
 

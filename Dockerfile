@@ -1,40 +1,30 @@
-FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/latch-base:02ab-main
+FROM 812206152185.dkr.ecr.us-west-2.amazonaws.com/latch-base:9a7d-main
 
 # Update env
 RUN apt-get update -y
 
 # Add UNIX tools
-RUN apt-get install -y gcc g++ make perl zip unzip gzip wget
+RUN apt-get install -y gcc g++ make perl zip unzip gzip wget curl
 
-# Add dependencies
-RUN apt-get install -y libnss-sss samtools r-base r-base-dev tabix wget libssl-dev libcurl4-openssl-dev libxml2-dev && apt-get clean all
+# Get miniconda and set path
+RUN curl -O \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && mkdir /root/.conda \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-## Now install R and littler, and create a link for littler in /usr/local/bin
-## Also set a default CRAN repo, and make sure littler knows about it too
-RUN apt-get install -y \
-        r-base \
-        r-base-dev \
-        r-recommended \
-    && echo 'options(repos = list(CRAN = "http://cran.rstudio.com/"))' >> /etc/R/Rprofile.site \
-    && rm -rf /tmp/downloaded_packages/ /tmp/*.rds \
-    && rm -rf /var/lib/apt/lists/*
+ENV PATH="/root/miniconda3/bin:$PATH"
+ARG PATH="/root/miniconda3/bin:$PATH"
 
-## R packages - common stuff
-RUN Rscript -e 'install.packages(c("devtools", "dplyr", "ggplot2", "reshape2"))' \
-    && rm -rf /tmp/downloaded_packages/ /tmp/*.rds
+# testing conda installation
+RUN conda --version && conda clean --all --yes
 
+# Samtools
+RUN conda install -c bioconda samtools
 
-# Install HOMER
-# Code from https://github.com/chrisamiller/docker-homer/blob/master/Dockerfile
-RUN mkdir /opt/homer/ && cd /opt/homer && wget http://homer.ucsd.edu/homer/configureHomer.pl \
-    && /usr/bin/perl configureHomer.pl -install \
-    && /usr/bin/perl configureHomer.pl -install hg19
-
-#softlink config file and data directory
-RUN rm -rf /opt/homer/data && ln -s /opt/homerdata/data /opt/homer/data
-RUN rm -f /opt/homer/config.txt && ln -s /opt/homerdata/config.txt /opt/homer/config.txt
-
-ENV PATH=${PATH}:/opt/homer/bin/
+# Homer
+RUN conda install -c bioconda homer
+RUN perl /root/miniconda3/share/homer*/configureHomer.pl -install hg19
 
 COPY data /root/reference
 COPY wf /root/wf
