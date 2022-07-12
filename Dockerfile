@@ -24,7 +24,7 @@ RUN conda install -c bioconda samtools
 
 # Homer
 RUN conda install -c bioconda homer
-RUN perl /root/miniconda3/share/homer*/configureHomer.pl -install hg19
+RUN perl /root/miniconda3/share/homer*/configureHomer.pl -install hg38
 
 COPY data /root/reference
 COPY wf /root/wf
