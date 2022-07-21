@@ -5,7 +5,7 @@ Find Motifs ...
 import subprocess
 from pathlib import Path
 
-from latch import small_task, large_task, workflow
+from latch import large_task, workflow
 from latch.types import LatchFile, LatchDir
 
 
@@ -80,6 +80,10 @@ def call_motifs(bam: LatchFile) -> LatchDir:
 
     Homer-Motif calls peaks using homer motif callers and analyzes the genomic positions for enriched motifs.
 
+    ### Tools used
+    - Heinz S, Benner C, Spann N, Bertolino E et al. Simple Combinations of Lineage-Determining Transcription Factors Prime cis-Regulatory Elements Required for Macrophage and B Cell Identities. Mol Cell 2010 May 28;38(4):576-589. PMID: 20513432
+    - Danecek P, Bonfield JK, Liddle J, Marshall J, Ohan V, Pollard MO, Whitwham A, Keane T, McCarthy SA, Davies RM, Li H, Twelve years of SAMtools and BCFtools, GigaScience (2021) 10(2) giab008 [33590861]
+
     __metadata__:
         display_name: HOMER motif caller
         author:
@@ -104,3 +108,7 @@ def call_motifs(bam: LatchFile) -> LatchDir:
 
     return find_motif_task(bam=bam)
 
+
+# Local Debugging
+if __name__ == "__main__":
+    call_motifs(LatchFile("/Users/stephenlu/Documents/latchbio/homer-motif-latch/data/test_file.bam"))

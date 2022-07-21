@@ -34,5 +34,6 @@ COPY wf /root/wf
 # correctly with latch.
 ARG tag
 ENV FLYTE_INTERNAL_IMAGE $tag
+RUN sed -i 's/latch/wf/g' flytekit.config
 RUN python3 -m pip install --upgrade latch
 WORKDIR /root
